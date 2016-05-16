@@ -1,0 +1,13 @@
+
+ <ion-nav-view name="tab-view">
+
+</ion-nav-view>
+<div class="h300px w100 bgE0 pa z9999 pab p4px"  ng-if="config.platform  && filterKitcher.listShow">
+         	<div   class="dfr h100 w80 bdBD mauto ajc lh60px">
+         	<div ng-repeat="item in config.keyBoard  track by $index"    class="tc f50px bbDB brDB" ng-click="inputKey('{{item.key}}')" 
+         			ng-class="{'keyAll':item.width =='keyAll','keyBorder':item.width=='keyBorder','Backspace':item.width=='Backspace','Otherspace':item.width=='Otherspace'}">
+         			{{item.key}}
+         		</div>
+         		
+         	</div>
+ </div>

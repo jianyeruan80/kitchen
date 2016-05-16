@@ -1,0 +1,77 @@
+<ion-view view-title="Menusifu">
+   <ion-header-bar align-title="center" class="bar-dark">
+      <h2  class="font30px cfff" translate>
+         runner
+      </h2> <a class="button button-energized button-icon"  style="border:solid 1px #ccc;font-size:25px;margin-left:2vw;color:yellow" translate ng-click="language()">english</a>
+      <h1 class="title" style="font-size:30px">{{clock | date:'HH:mm:ss'}}</h1>
+      <div class="buttons">
+         <button class="button button-energized button-icon ion-ios-undo" ng-if="!!config.kitchenUpdoListLen && config.active=='myclick'" ng-click="kitchUpdo()" style="border:solid #ccc 1px;font-size:25px;margin-right:8px;" translate>undo</button>
+         <button class="button button-energized button-icon ion-ios-undo" ng-if="!!config.runnerUpdoListLen && config.active !='myclick'" ng-click="runnerUpdo()" style="border:solid #ccc 1px;font-size:25px;margin-right:8px;" translate>undo</button>
+         <a class="button button-energized button-icon ion-search" ng-click="search('','runner','go')" style="font-size:25px;border:solid #ccc 1px;margin-right:8px;" translate>search</a>
+         <a class="button button-energized button-icon  ion-ios-paperplane"  href="#/tab/runnerReview" style="font-size:25px;border:solid #ccc 1px;" translate>review</a>     
+         <a class="button ion-close-circled" onclick="window.close();" style="font-size:25px;" if="config.platform"></a>
+      </div>
+   </ion-header-bar>
+   <div class="bar bar-subheader">
+      <div class="row subHeader">
+          <div class="w220px" translate>orderInfo</div>
+         <div style="width:calc(100% - 445px);width:-webkit-calc(100% - 445px);" translate>dishName</div>
+         <div class="w125px" translate>time</div>
+         <div class="w150px" translate>status</div>
+      </div>
+   </div>
+   <ion-content class="mt48px">
+      <div class="dfr w100" >
+      <div class="dfr w100 bge" ng-repeat="item in orderList | filter:{orderStatus:'!'}"  ng-init="item.parent=true"
+         ng-style="{'margin-bottom':item.parent?'10px':'0','margin-top':item.parent?'10px':'0'}">
+      <div  class="dfr w100 bge bdc">
+      <div  class="w250px hmin90px f25px tc mauto h100" >
+         <div  class="dib tl h100" >
+            <div class="h30px db lh30px" >Order&nbsp;&nbsp;#{{item.orderNum}}</div>
+            <div class="h30px db lh30px" >{{type[item.orderType]}}&nbsp;&nbsp;{{item.tableName}}</div>
+            <div class="h30px db lh30px" >{{item.server}}</div>
+         </div>
+      </div>
+      <div  class="f1 tc bgf pr ptrbl0-5px">
+         <a style="border-left:solid #ccc 1px;" ng-if="item.done" 
+            ng-click="done($event)" orderId="{{item.id}}" currentTime="{{item.currentTime}}" class="pa h100 myclick par z10 w150px">
+            <h1 class="done"> Done</h1>
+         </a>
+         <span ng-repeat-start="order in item.orderItemList"  dispay="dn"></span>
+         <span ng-repeat-start="groundItems in order.orderItemListGroupBySubOrder"  style="display:none" ></span> 
+         <!-- ng-click='processSubmit("{{item.id}}","{{itemsub.id}}","{{config.active}}")'  -->
+      <div class="dfr w100 bbe lh45px f25px hmin45px {{config.active}}" ng-repeat-end ng-repeat="itemsub in groundItems.orderItemList"   on-hold='search("{{itemsub.itemDetail}}","runner","go")'>
+
+            <div style="width:calc(100% - 275px);width:-webkit-calc(100% - 275px);text-align:left;font-size:22px;line-height:30px">
+               <p  ng-class="{itemVoid:itemsub.voidItem}">
+                  <span ng-if="!!groundItems.subOrderName" 
+                     class="seat">S{{groundItems.subOrderName}}</span>
+                  <span ng-if="!!item.recall" class="recall">R</span>
+                  <span   class="f25px lh30px" ng-value="item.parent=true">
+                  {{itemsub.itemDetail}}</span><span ng-if="!!(itemsub.printQuantity>1)" class="cred f20px fw600"> X {{itemsub.printQuantity}}</span><span ng-if="!!order.courseName"  style="color:red">({{order.courseName}})</span>
+               </p>
+               <p ng-repeat="combo in itemsub.subOrderItems" style="text-indent:12px;">{{$index+1}},{{combo.itemDetail |to_trusted }}</p>
+               <p ng-repeat="itemSec in itemsub.orderOptionItems" ng-if="$index % 2 ==0"  >  
+                  <span ng-if="$index+0<itemsub.orderOptionItems.length">&nbsp;&nbsp;{{itemsub.orderOptionItems[$index+0].optionDetail |to_trusted}}   &nbsp;|</span>  
+                  <span ng-if="$index+1<itemsub.orderOptionItems.length">&nbsp;&nbsp;{{itemsub.orderOptionItems[$index+1].optionDetail |to_trusted}}</span>  
+               </p>
+            </div>
+
+            <div  class="w125px" my-current-time></div>
+
+
+            <div  id="change{{itemsub.id}}"  ng-if="!itemsub.voidItem" class="w150px tc"  ng-class="{'ion-checkmark':runPrepareStatus[itemsub.prepareStatus]==''}"  >{{runPrepareStatus[itemsub.prepareStatus]}}</div>
+            <div   ng-if="!!itemsub.voidItem" id="change{{itemsub.id}}" class="w150px tc" >Confirm</div>
+        <!--     <div class="w150px">
+               <h1 ng-class="{'ion-checkmark':runPrepareStatus[itemsub.prepareStatus]==''}" style="line-height:45px;">{{runPrepareStatus[itemsub.prepareStatus]}}</h1>
+               <div  id="change{{itemsub.id}}"  ng-if="!itemsub.voidItem" class="w150px tc" ng-class="{'ion-checkmark':runPrepareStatus[itemsub.prepareStatus]==''}" >{{runPrepareStatus[itemsub.prepareStatus]}}</div>
+               <div   ng-if="!!itemsub.voidItem" id="change{{itemsub.id}}" class="w150px tc" >Confirm</div>
+            </div> -->
+         </div>
+         <span ng-repeat-end class="dn"></span>  
+      </div>
+      <div>
+      </div>
+      <div>
+   </ion-content>
+</ion-view>
