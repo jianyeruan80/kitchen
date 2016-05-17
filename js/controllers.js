@@ -10,6 +10,22 @@ angular.module('kitchen.controllers', [])
 
         }
     })
+    .filter('to_12', function() {
+        return function(data) {
+           var d=new Date(data);
+           var h=d.getHours();
+           var m=d.getMinutes();
+           var s=d.getSeconds();
+           var end=" AM";
+           if(h>12){
+             h-hours%12;
+             end=" PM";
+           }
+           return (100+h).toString().substring(1,3)+(100+m).toString().substring(1,3)+end;
+
+
+        }
+    })
     .directive("myCurrentTime", function() {
         var timeOut = {};
         return function(scope, element, attrs) {
@@ -865,7 +881,8 @@ $scope.processSubmit=function(orderId,orderItemId){
           
 
 
-   $scope.done = function(item) {
+   $scope.done = function(e) {
+
             var processJson = {};
            processJson.orderItemId = [];
            
@@ -874,14 +891,9 @@ $scope.processSubmit=function(orderId,orderItemId){
                 processJson.status = "DONE";
             }
 
-            var orderId = item.currentTarget.getAttribute("orderId");
-             var currentTime = item.currentTarget.getAttribute("currentTime");
-              processJson.orderId = orderId;
-            
-
-            angular.forEach($scope.orderList, function(value, key) {
-                    if(orderId==value.id && currentTime==value.currentTime){
-                
+           angular.forEach($scope.orderList, function(value, key) {
+                    if(e.target.dataset.subitemid==value.id){
+                     processJson.orderId = value.id;
                     angular.forEach(value.orderItemList, function(orderValue, orderKey) {
                         angular.forEach(orderValue.orderItemListGroupBySubOrder, function(groundValue, groundKey) {
                             angular.forEach(groundValue.orderItemList, function(setValue, setKey) {
@@ -896,7 +908,7 @@ $scope.processSubmit=function(orderId,orderItemId){
                 }
                 });
 
-            console.log(processJson);
+           
     
   $http({
                 method: 'POST',
@@ -1021,10 +1033,13 @@ $scope.processSubmit=function(orderId,orderItemId){
                     runnerUpdoList.sort(function(a, b) {
                         return parseInt(a.time) - parseInt(b.time);
                     });
-
-                    runnerUpdoList[length - 1].status = "COMPLETE";
-
-                    $http({
+                    if(runnerUpdoList[length - 1]=="DONE"){
+                        runnerUpdoList[length - 1].status = "SERVED";
+                    }else{
+                        runnerUpdoList[length - 1].status = "COMPLETE";
+                    }
+                    
+                  $http({
                             method: 'POST',
                             url: $rootScope.updateOrderUrl,
                             headers: {
@@ -1138,21 +1153,14 @@ $scope.processSubmit=function(orderId,orderItemId){
         }
 
 
-   $scope.done = function(item) {
+   $scope.done = function(e) {
 
            var processJson = {};
            processJson.orderItemId = [];
-           
-            processJson.status = "SERVED";
-
-            var orderId = item.currentTarget.getAttribute("orderId");
-             var currentTime = item.currentTarget.getAttribute("currentTime");
-              processJson.orderId = orderId;
-            
-
-            angular.forEach($scope.orderList, function(value, key) {
-                    if(orderId==value.id && currentTime==value.currentTime){
-                
+          processJson.status = "SERVED";
+           angular.forEach($scope.orderList, function(value, key) {
+                    if(e.target.dataset.subitemid==value.id){
+                     processJson.orderId = value.id;
                     angular.forEach(value.orderItemList, function(orderValue, orderKey) {
                         angular.forEach(orderValue.orderItemListGroupBySubOrder, function(groundValue, groundKey) {
                             angular.forEach(groundValue.orderItemList, function(setValue, setKey) {
@@ -1273,3 +1281,4 @@ sign=true;
 }
 return sign;
 }
+

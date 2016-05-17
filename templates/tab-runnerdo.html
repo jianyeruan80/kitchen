@@ -34,8 +34,8 @@
       </div>
       <div  class="f1 tc bgf pr ptrbl0-5px">
          <a style="border-left:solid #ccc 1px;" 
-            ng-click="done($event)" orderId="{{item.id}}" currentTime="{{item.currentTime}}" class="pa h100 myclick par z10 w150px">
-            <h1 class="done">{{item.orderStatus !="SERVED"?"Done":"Served"}} </h1>
+            ng-click="done($event)"  data-subitemid="{{item.subItemId}}" class="pa h100 myclick par z10 w150px">
+            <h1 class="done" data-subitemid="{{item.subItemId}}" >{{item.orderStatus !="SERVED"?"Done":"Served"}} </h1>
          </a>
          <span ng-repeat-start="order in item.orderItemList"  dispay="dn"></span>
          <span ng-repeat-start="groundItems in order.orderItemListGroupBySubOrder"  style="display:none" ></span> 
@@ -58,14 +58,6 @@
 
             <div  class="w125px" my-current-time></div>
             
-
-          <!--   <div  id="change{{itemsub.id}}"  ng-if="!itemsub.voidItem" class="w150px tc"  ng-class="{'ion-checkmark':runPrepareStatus[itemsub.prepareStatus]==''}"  >{{runPrepareStatus[itemsub.prepareStatus]}}</div>
-            <div   ng-if="!!itemsub.voidItem" id="change{{itemsub.id}}" class="w150px tc" >Confirm</div> -->
-        <!--     <div class="w150px">
-               <h1 ng-class="{'ion-checkmark':runPrepareStatus[itemsub.prepareStatus]==''}" style="line-height:45px;">{{runPrepareStatus[itemsub.prepareStatus]}}</h1>
-               <div  id="change{{itemsub.id}}"  ng-if="!itemsub.voidItem" class="w150px tc" ng-class="{'ion-checkmark':runPrepareStatus[itemsub.prepareStatus]==''}" >{{runPrepareStatus[itemsub.prepareStatus]}}</div>
-               <div   ng-if="!!itemsub.voidItem" id="change{{itemsub.id}}" class="w150px tc" >Confirm</div>
-            </div> -->
          </div>
          <span ng-repeat-end class="dn"></span>  
       </div>

@@ -37,7 +37,7 @@ ng<ion-view view-title="Menusifu">
                                    <h1 class="done">Served</h1>
                                   </div> 
                                   <div class="pa par150px w125px blc bgf h100 z10 wmin125px" >
-                                   <h1 class="servedTime"> {{item.servedTime | date:'HH:mm'}}</h1>
+                                   <h1 class="servedTime"> {{item.servedTime | to_12:this}}</h1>
                                   </div>
                                                 <span ng-repeat-start="order in item.orderItemList"  class="dn"></span>
                                                 <span ng-repeat-start="groundItems in order.orderItemListGroupBySubOrder"  class="dn" ></span> 
