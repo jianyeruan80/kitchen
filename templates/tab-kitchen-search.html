@@ -8,7 +8,7 @@
          <input type="text" ng-model="filterKitcher.filterWord" 
             ng-focus="filterKitcher.listShow=true"  ng-click="filterKitcher.filterWord=''" 
             style="min-width:300px;margin-right:10px;" />
-         <div class="button button-energized button-icon ion-ios-undo" ng-focus="filterKitcher.listShow=false"  ng-click="goBack()"  href="#" style="width:150px;border:solid #ccc 1px;font-size:25px;margin-right:8px;" translate>back</div>
+         <a class="button button-energized button-icon ion-ios-undo" ng-focus="filterKitcher.listShow=false"  href="#{{config.kitchenerUrl}}" style="width:150px;border:solid #ccc 1px;font-size:25px;margin-right:8px;" translate>back</a>
       </div>
    </ion-header-bar>
    <div class="bar bar-subheader">
