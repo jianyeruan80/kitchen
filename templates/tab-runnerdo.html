@@ -49,7 +49,7 @@
                   <span   class="f25px lh30px" ng-value="item.parent=true">
                   {{itemsub.itemDetail}}</span><span ng-if="!!(itemsub.printQuantity>1)" class="cred f20px fw600"> X {{itemsub.printQuantity}}</span><span ng-if="!!order.courseName"  style="color:red">({{order.courseName}})</span>
                </p>
-               <p ng-repeat="combo in itemsub.subOrderItems" style="text-indent:12px;">{{$index+1}},{{combo.itemDetail |to_trusted }}</p>
+               <p ng-repeat="combo in itemsub.subOrderItems" style="text-indent:12px;">{{$index+1}},{{combo.itemDetail |to_trusted }} <span  class="cred f20px fw600"> X {{combo.printQuantity}}</span></p>
                <p ng-repeat="itemSec in itemsub.orderOptionItems" ng-if="$index % 2 ==0"  >  
                   <span ng-if="$index+0<itemsub.orderOptionItems.length">&nbsp;&nbsp;{{itemsub.orderOptionItems[$index+0].optionDetail |to_trusted}}   &nbsp;|</span>  
                   <span ng-if="$index+1<itemsub.orderOptionItems.length">&nbsp;&nbsp;{{itemsub.orderOptionItems[$index+1].optionDetail |to_trusted}}</span>  

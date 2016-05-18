@@ -56,7 +56,7 @@ ng<ion-view view-title="Menusifu">
                                                               {{itemsub.itemDetail}}</span><span ng-if="!!(itemsub.printQuantity>1)"  class="cred f20px fw600"> X {{itemsub.printQuantity}}</span><span ng-if="!!order.courseName"  class="cred">({{order.courseName}})</span></p>
                                                         
 
-                                                               <p ng-repeat="combo in itemsub.subOrderItems" >&nbsp;&nbsp;{{$index+1}},{{combo.itemDetail |to_trusted }}</p>  
+                                                               <p ng-repeat="combo in itemsub.subOrderItems" >&nbsp;&nbsp;{{$index+1}},{{combo.itemDetail |to_trusted }}  <span  class="cred f20px fw600"> X {{combo.printQuantity}}</span></p>  
 
 
 
