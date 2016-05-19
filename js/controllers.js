@@ -348,7 +348,7 @@ angular.module('starter.controllers', [])
         };
 
         $scope.goBack = function() {
-            //alert("S")
+            
             $scope.filterKitcher.listShow = false;
             $location.path("tab/kitchen");
         }
@@ -1400,6 +1400,8 @@ angular.module('starter.controllers', [])
                                 angular.forEach(groundValue.orderItemList, function(sv, sk) {
                                     processJson.orderItemId.push(sv.id);
                                 })
+                                goOut=true;
+                                console.log(groundValue.orderItemList);
                             }
 
 
@@ -1412,7 +1414,7 @@ angular.module('starter.controllers', [])
 
             };
 
-            // console.log(processJson);
+         console.log(processJson);
 
             $http({
                 method: 'POST',
