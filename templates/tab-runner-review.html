@@ -22,7 +22,7 @@ ng<ion-view view-title="Menusifu">
   <ion-content class="mt48px">
   
   <div class="dfr w100"  >
-     <div  class="dfr w100 bge" ng-repeat="item in orderList | filter:{orderStatus:'SERVED'}"  ng-init="item.parent=true"
+     <div  class="dfr w100 bge" ng-repeat="item in orderList | filter:{status:''}"  ng-init="item.parent=true"
       ng-style="{'margin-bottom':item.parent?'10px':'0','margin-top':item.parent?'10px':'0'}">
              <div  class="dfr bdc w100 gbe" >  
                      <div class="w250px hmin90px f25px tc mauto h100" >
@@ -37,13 +37,13 @@ ng<ion-view view-title="Menusifu">
                                    <h1 class="done">Served</h1>
                                   </div> 
                                   <div class="pa par150px w125px blc bgf h100 z10 wmin125px" style="white-space:nowrap" >
-                                   <h1 class="servedTime"> {{item.servedTime | to_12:this}}</h1>
+                                   <h1 class="servedTime"> {{item.completeTime | to_12:this}}</h1>
                                   </div>
-                                                <span ng-repeat-start="order in item.orderItemList"  class="dn"></span>
+                                                <span ng-repeat-start="order in item.kitchenOrderItemsGroupByCourses"  class="dn"></span>
                                                 <span ng-repeat-start="groundItems in order.orderItemListGroupBySubOrder"  class="dn" ></span> 
                                                   <div 
                                                    class="dfr hmin45px bbe lh45px f25px"
-                                                   ng-repeat-end ng-repeat="itemsub in groundItems.orderItemList">
+                                                   ng-repeat-end ng-repeat="itemsub in groundItems.orderItemList | filter:runnerReview">
                                                           <div style="width:calc(100% - 275px);width:-webkit-calc(100% - 275px);" class="tl f22px lh30px">
                                                               <p  ng-class="{itemVoid:itemsub.voidItem}">
                                                               <span ng-if="!!groundItems.subOrderName" 
@@ -76,6 +76,7 @@ ng<ion-view view-title="Menusifu">
                                                    </div>
 
                                                    <span ng-repeat-end class="dn"></span>  
+                    <div ng-if="!!item.orderNote"  style="height:42px;line-height:42px;text-align:left;background:#eee;word-wrap: break-word;font-size:20px;"><span style="color:red">Note:</span>{{item.orderNote}}</div>
                                             </div>
                   
            

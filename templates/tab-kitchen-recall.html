@@ -5,7 +5,7 @@
       </h2>
       <h1 class="title" style="font-size:30px">{{clock | date:'HH:mm:ss'}}</h1>
       <div class="buttons">
-         <a class="button button-energized button-icon ion-ios-undo" style="border:solid #ccc 1px;font-size:25px;margin-right:8px;" ng-click="goBack()" translate>back</a>
+         <a class="button button-energized button-icon ion-ios-undo" style="border:solid #ccc 1px;font-size:25px;margin-right:8px;" href="javascript:history.back()" translate>back</a>
       </div>
    </ion-header-bar>
    <div class="bar bar-subheader">
@@ -19,9 +19,9 @@
    </div>
    <ion-content class="mt48px">
       <div  class="dfr w100" >
-      <div class="dfr w100 bge" ng-repeat="item in orderList  | filter:{printerName:config.printerName}" 
-         ng-style="{'margin-bottom':(item.kitchRecallShow || item.orderStatus)?'10px':'0','margin-top':(item.kitchRecallShow || item.orderStatus)?'10px':'0'}">
-      <div   class="dfr w100 bge bdc" ng-if="item.kitchRecallShow || item.orderStatus">
+      <div class="dfr w100 bge" ng-repeat="item in orderList  | filter:{printerName:config.printerName,kitchRecallShow:true,}" 
+         ng-style="{'margin-bottom':(item.kitchRecallShow || item.status)?'10px':'0','margin-top':(item.kitchRecallShow || item.status)?'10px':'0'}">
+      <div   class="dfr w100 bge bdc" ng-if="item.kitchRecallShow || item.status">
       <div style="width:250px;min-height:90px;font-size:22px;text-align:center;margin:auto;height:100%" >
          <div style="display:inline-block;text-align:left;height:100%;">
             <div style="height:30px;display:block;line-height:30px">Order&nbsp;&nbsp;#{{item.orderNum}}</div>
@@ -30,9 +30,10 @@
          </div>
       </div>
       <div class="f1 tc bge p" style="text-align:center;background:#fff;padding:0 5px;">
-         <span ng-repeat-start="order in item.orderItemList " style="display:none" ></span>
+         <span ng-repeat-start="order in item.kitchenOrderItemsGroupByCourses" style="display:none" ></span>
          <span ng-repeat-start="groundItems in order.orderItemListGroupBySubOrder"  style="display:none" ></span> 
-         <div  class="dfr w100" style="min-height:45px;border-bottom:solid #eee 1px;line-height:45px;font-size:25px" ng-repeat-end ng-repeat="itemsub in groundItems.orderItemList"  >
+         <div  class="dfr w100" style="min-height:45px;border-bottom:solid #eee 1px;line-height:45px;font-size:25px" ng-repeat-end
+          ng-repeat="itemsub in groundItems.orderItemList | filter:kitcherRecallStatus"  >
             <div style="width:calc(100% - 275px);width:-webkit-calc(100% - 275px);text-align:left;font-size:22px;line-height:30px">
                <p  ng-class="{itemVoid:itemsub.voidItem}">
                   <span ng-if="!!groundItems.subOrderName" 
@@ -42,22 +43,26 @@
                   <span   style="font-size:25px;line-height:30px" ng-value="item.parent=true">
                   {{itemsub.itemDetail}}</span><span ng-if="!!(itemsub.printQuantity>1)" style="color:red;font-size:20px;font-weight:600"> X {{itemsub.printQuantity}}</span><span ng-if="!!order.courseName"  style="color:red">({{order.courseName}})</span>
                </p>
-               <p ng-repeat="combo in itemsub.subOrderItems" >{{$index+1}},{{combo.itemDetail |to_trusted }}  <span  class="cred f20px fw600"> X {{combo.printQuantity}}</span> <input class="cb{{itemsub.id}}" type="hidden"  value="{{combo.id}}" /></p>
-               <p ng-repeat="itemSec in itemsub.orderOptionItems" ng-if="$index % 2 ==0"  >  
+               <p ng-repeat="combo in itemsub.subOrderItems" style="text-indent:12px;font-size:20px">{{$index+1}},{{combo.itemDetail |to_trusted }}  <span  class="cred f20px fw600"> X {{combo.printQuantity}}</span> </p>
+               <p ng-repeat="itemSec in itemsub.orderOptionItems" ng-if="$index % 2 ==0"  style="text-indent:12px;font-size:20px">  
                   <span ng-if="$index+0<itemsub.orderOptionItems.length">&nbsp;&nbsp;{{itemsub.orderOptionItems[$index+0].optionDetail |to_trusted}}   &nbsp;|</span>  
                   <span ng-if="$index+1<itemsub.orderOptionItems.length">&nbsp;&nbsp;{{itemsub.orderOptionItems[$index+1].optionDetail |to_trusted}}</span>  
                </p>
             </div>
-            <div style="width:125px;min-width:125px;"  my-current-time></div>
+                     
+            <div  class="w125px" >{{itemsub | stopTime:this}}</div>
+
             <div style="width:125px;background:#666;min-width:125px;max-height:50px;" 
-               ng-click="kitchenRecall('{{item.id}}','{{itemsub.id}}')" ng-if="!item.orderStatus && !itemsub.voidItem" class="circle20">
+               ng-click="kitchenRecall('{{item.orderId}}','{{itemsub.kitchenTicketItemStatus[0].id}}')" ng-if="!item.status && !itemsub.voidItem" class="circle20">
                <h1 style="padding:5px;color:#fff;">ReCall</h1>
             </div>
-            <div style="width:125px;min-width:125px;"  ng-if="!!item.orderStatus || itemsub.voidItem" >
+
+            <div style="width:125px;min-width:125px;"  ng-if="!!item.status || itemsub.voidItem" >
                <h1 style="padding:8px;2px">Close</h1>
             </div>
          </div>
-         <span ng-repeat-end  style="display:none"></span>  
+         <span ng-repeat-end  style="display:none"></span>
+          <div ng-if="!!item.orderNote"  style="height:42px;line-height:42px;text-align:left;background:#eee;word-wrap: break-word;font-size:20px;"><span style="color:red">Note:</span>{{item.orderNote}}</div>
       </div>
       <div>
       </div>

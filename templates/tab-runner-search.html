@@ -9,7 +9,7 @@
             ng-focus="filterKitcher.listShow=true"  ng-click="filterKitcher.filterWord=''" 
             style="min-width:300px;margin-right:10px;" />
          <a class="button button-energized button-icon ion-ios-undo" 
-            href="#{{config.runnerIndex}}"   ng-click="filterKitcher.listShow=false"  style="width:150px;border:solid #ccc 1px;font-size:25px;margin-right:8px;" translate>back</a>
+             href="javascript:history.back()"   ng-click="filterKitcher.listShow=false"  style="width:150px;border:solid #ccc 1px;font-size:25px;margin-right:8px;" translate>back</a>
       </div>
    </ion-header-bar>
    <div class="bar bar-subheader">
@@ -28,7 +28,7 @@
    </div>
    <ion-content class="mt48px">
       <div  class="dfr w100" ng-if="!!filterKitcher.filterWord" >
-      <div style="background:#eee;"  class="dfr w100" ng-repeat="item in orderList  | filter:{orderStatus:'!'}"  
+      <div style="background:#eee;"  class="dfr w100" ng-repeat="item in orderList  | filter:{status:'!'}"  
          ng-style="{'margin-bottom':item.parent?'10px':'0','margin-top':item.parent?'10px':'0'}"
          ng-if="!filterKitcher.listShow">
       <div class="dfr w100 bge bdc" ng-if="item.parent" >
@@ -40,7 +40,7 @@
          </div>
       </div>
       <div  class="f1 tc bgf pl5px" >
-         <span ng-repeat-start="order in item.orderItemList"  class="dn"></span>
+         <span ng-repeat-start="order in item.kitchenOrderItemsGroupByCourses"  class="dn"></span>
          <span ng-repeat-start="groundItems in order.orderItemListGroupBySubOrder"  class="dn" ></span> 
          <div  class="dfr w100 lh45px f25px hmin45px bbe {{config.active}}" ng-repeat-end  ng-click='processSubmit("{{item.id}}","{{itemsub.id}}","{{config.active}}")'   ng-repeat="itemsub in groundItems.orderItemList | filter:{itemDetail:filterKitcher.filterWord}" >
             <div style="width:calc(100% - 275px);width:-webkit-calc(100% - 275px);text-align:left;font-size:22px;line-height:30px">
@@ -51,18 +51,19 @@
                   <span   class="lh30px f25px" ng-value="item.parent=true">
                   {{itemsub.itemDetail}}</span><span ng-if="!!(itemsub.printQuantity>1)" class="cred f20px fw600"> X {{itemsub.printQuantity}}</span><span ng-if="!!order.courseName" class="cred">({{order.courseName}})</span>
                </p>
-               <p ng-repeat="combo in itemsub.subOrderItems" >{{$index+1}},{{combo.itemDetail |to_trusted }}  <span  class="cred f20px fw600"> X {{combo.printQuantity}}</span></p>
-               <p ng-repeat="itemSec in itemsub.orderOptionItems" ng-if="$index % 2 ==0"  >  
+               <p ng-repeat="combo in itemsub.subOrderItems" style="text-indent:12px;font-size:20px">{{$index+1}},{{combo.itemDetail |to_trusted }}  <span  class="cred f20px fw600"> X {{combo.printQuantity}}</span></p>
+               <p ng-repeat="itemSec in itemsub.orderOptionItems"  style="text-indent:12px;font-size:20px" >  
                   <span ng-if="$index+0<itemsub.orderOptionItems.length">&nbsp;&nbsp;{{itemsub.orderOptionItems[$index+0].optionDetail |to_trusted}}   &nbsp;|</span>  
                   <span ng-if="$index+1<itemsub.orderOptionItems.length">&nbsp;&nbsp;{{itemsub.orderOptionItems[$index+1].optionDetail |to_trusted}}</span>  
                </p>
             </div>
             <div class="w125px"  my-current-time></div>
             <div class="w150px" id="change{{itemsub.id}}" >
-               <h1 ng-class="{'ion-checkmark':runPrepareStatus[itemsub.prepareStatus]==''}">{{runPrepareStatus[itemsub.prepareStatus]}}</h1>
+               <h1 ng-class="{'ion-checkmark':runPrepareStatus[itemsub.kitchenTicketItemStatus[0].status]==''}">{{runPrepareStatus[itemsub.kitchenTicketItemStatus[0].status]}}</h1>
             </div>
          </div>
-         <span ng-repeat-end  class="dn"></span>  
+         <span ng-repeat-end  class="dn"></span>
+  <div ng-if="!!item.orderNote"  style="height:42px;line-height:42px;text-align:left;background:#eee;word-wrap: break-word;font-size:20px;"><span style="color:red">Note:</span>{{item.orderNote}}</div>
       </div>
       <div>
       </div>

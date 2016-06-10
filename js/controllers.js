@@ -13,12 +13,14 @@ angular.module('starter.controllers', [])
     .filter('to_12', function() {
         return function(data) {
             var d = new Date(data);
+
             var h = d.getHours();
             var m = d.getMinutes();
             var s = d.getSeconds();
             var end = " AM";
+
             if (h > 12) {
-                h - hours % 12;
+                h = h % 12;
                 end = " PM";
             }
             return (100 + h).toString().substring(1, 3) + ":" + (100 + m).toString().substring(1, 3) + end;
@@ -32,33 +34,70 @@ angular.module('starter.controllers', [])
             scope.itemsub.count = 0;
             var userTime = function() {
                 scope.itemsub.count = 0;
-                if (!!scope.itemsub.prepareStartTime) {
-                    scope.itemsub.count = (scope.item.currentTime - scope.itemsub.prepareStartTime);
-                    window.clearInterval(timeOut[scope.itemsub.id]);
+               // window.clearInterval(timeOut[scope.itemsub.kitchenTicketItemStatus[0].id]);
+               window.clearInterval(timeOut[scope.itemsub.id]);
+               if(!!scope.itemsub.kitchenTicketItemStatus[0].prepareTime && !scope.item.recall) {
+                    scope.itemsub.count = (scope.item.currentTime - scope.itemsub.kitchenTicketItemStatus[0].prepareTime);
+                    
                 }
-                timeOut[scope.itemsub.id] = setInterval(function() {
+
+                timeOut[scope.itemsub.kitchenTicketItemStatus[0].id] = setInterval(function() {
 
                     var hours = 0,
                         mins = 0,
                         secs = 0;
-
-                    if (!!scope.itemsub.prepareEndTime && scope.itemsub.prepareStatus == "COMPLETE") {
-
-                        scope.itemsub.count = (scope.itemsub.prepareEndTime - scope.itemsub.prepareStartTime);
-                    }
 
                     scope.itemsub.count = parseInt(scope.itemsub.count, 10) + 1000;
                     hours = scope.itemsub.count / 3600 / 1000;
                     mins = (scope.itemsub.count / 60 / 1000) % 60;
                     secs = scope.itemsub.count / 1000 % 60;
                     element.text((parseInt(hours + 100) + ":").substring(1, 4) + (parseInt(mins + 100) + ":").substring(1, 4) + (parseInt(secs + 100) + "").substring(1, 3));
+                    // }
+
+
                 }, 1000);
             }
             userTime();
         }
     })
+
+.filter('stopTime', function() {
+        return function(data, scope) {
+            var time=0;
+            if(!!data.kitchenTicketItemStatus[0].serveTime){
+                time=data.kitchenTicketItemStatus[0].serveTime;
+            }else{
+                 time=data.kitchenTicketItemStatus[0].completeTime;
+            }
+            var count = time - data.kitchenTicketItemStatus[0].prepareTime;
+            count = parseInt(count, 10) + 1000;
+            hours = count / 3600 / 1000;
+            mins = (count / 60 / 1000) % 60;
+            secs = count / 1000 % 60;
+            return (parseInt(hours + 100) + ":").substring(1, 4) + (parseInt(mins + 100) + ":").substring(1, 4) + (parseInt(secs + 100) + "").substring(1, 3);
+
+
+        }
+    })
     .controller('TabCtrl', function($scope, $rootScope, $timeout, $ionicModal, localStorageService, $http, $location, $filter, $translate, localStorageService) {
         $scope.config = {};
+
+
+        $scope.kitcherStatus = function(item) {
+            return item.kitchenTicketItemStatus[0].status == "WAITING" || item.kitchenTicketItemStatus[0].status == "PROCESSING";
+        }
+        $scope.kitcherRecallStatus = function(item) {
+                return !(item.kitchenTicketItemStatus[0].status == "WAITING" || item.kitchenTicketItemStatus[0].status == "PROCESSING");
+            }
+  /*      $scope.runnerSearchStatus= function(item) {
+
+            return item.status!="SERVED";
+        }*/
+
+
+            /*   $scope.runnerReviewStatus = function(item){
+                 return (item.kitchenTicketItemStatus[0].status =="COMPLETE" || item.kitchenTicketItemStatus[0].status =="PROCESSING");
+               }*/
         var urlJson = getKeyValue($location.url());
         $scope.config.printerName = "";
         $scope.config.active = "none";
@@ -245,6 +284,7 @@ angular.module('starter.controllers', [])
         $scope.filterKitcher = {};
         $scope.filterKitcher.kitcherKey = [];
         $scope.filterKitcher.runnerKey = [];
+        $scope.filterKitcher.runnerServedKey = [];
         $scope.filterKitcher.filterWord = ""; //input\
 
         $scope.filterKitcher.searchList = [];
@@ -273,26 +313,25 @@ angular.module('starter.controllers', [])
 
         $scope.processSubmit = function(orderId, orderItemId, sign) {
 
-
             if (!!document.getElementById("change" + orderItemId)) {
                 var status = document.getElementById("change" + orderItemId).innerText;
             }
 
+
             if (sign != "none" && status != "") {
                 var processJson = {};
                 processJson.orderId = orderId;
-                processJson.orderItemId = [];
-                processJson.orderItemId.push(orderItemId);
+                processJson.prepareToServeIds = [];
+                processJson.prepareToServeIds.push(orderItemId);
 
 
 
-                processJson.status = "COMPLETE";
-                if (status == "Waiting" || status == "Pending") {
+                processJson.status = "DONE";
+                if (status == "Waiting") {
 
                     processJson.status = "PROCESSING";
                 }
-                //  console.log(processJson);
-
+             
                 $http({
                         method: 'POST',
                         url: $rootScope.updateOrderUrl,
@@ -310,9 +349,9 @@ angular.module('starter.controllers', [])
 
                             var kitchenUpdoList = localStorageService.get("kitchenUpdo");
                             if (processJson.status == "PROCESSING") {
-                                processJson.status = "INITIAL";
+                                processJson.status = "WAITING";
                                 document.getElementById("change" + orderItemId).innerText = "In Process";
-                            } else if (processJson.status == "COMPLETE") {
+                            } else if (processJson.status == "DONE") {
                                 processJson.status = "PROCESSING";
                                 if (!!document.getElementById("change" + orderItemId) && sign != "myclick") {
                                     document.getElementById("change" + orderItemId).innerText = "Finished";
@@ -348,15 +387,12 @@ angular.module('starter.controllers', [])
         };
 
         $scope.goBack = function() {
-            
+            //alert("S")
             $scope.filterKitcher.listShow = false;
             $location.path("tab/kitchen");
         }
 
         $scope.search = function(searchName, sign, go) {
-
-            //console.log("search");
-
 
             var time = 0;
             if (go == "go") {
@@ -381,7 +417,7 @@ angular.module('starter.controllers', [])
                     angular.forEach($scope.orderList, function(value, key) {
                         if (value.kitchShow == true) {
                             value.parent = false;
-                            angular.forEach(value.orderItemList, function(orderValue, orderKey) {
+                            angular.forEach(value.kitchenOrderItemsGroupByCourses, function(orderValue, orderKey) {
                                 angular.forEach(orderValue.orderItemListGroupBySubOrder, function(groundValue, groundKey) {
                                     for (var j = 0; j < groundValue.orderItemList.length; j++) {
                                         if (groundValue.orderItemList[j].prepareStatus == "COMPLETE" || groundValue.orderItemList[j].itemDetail != $scope.filterKitcher.filterWord) {} else {
@@ -401,7 +437,7 @@ angular.module('starter.controllers', [])
                     angular.forEach($scope.orderList, function(value, key) {
                         if (value.orderStatus != "SERVED") {
                             value["parent"] = false;
-                            angular.forEach(value.orderItemList, function(orderValue, orderKey) {
+                            angular.forEach(value.kitchenOrderItemsGroupByCourses, function(orderValue, orderKey) {
                                 angular.forEach(orderValue.orderItemListGroupBySubOrder, function(groundValue, groundKey) {
                                     for (var j = 0; j < groundValue.orderItemList.length; j++) {
                                         if (groundValue.orderItemList[j].itemDetail != $scope.filterKitcher.filterWord) {
@@ -428,10 +464,10 @@ angular.module('starter.controllers', [])
             $scope.processSubmit(data.orderId, data.orderItemId);
             if (!!data.search && document.getElementById("change" + data.orderItemId).innerText == "In Process") {
                 var temp = angular.copy($scope.filterKitcher.filterWord);
-                $scope.search("", "kitchen");
+                /*$scope.search("", "kitchen");
                 $timeout(function() {
                     $scope.search(temp, "kitchen");
-                }, 200)
+                }, 200)*/
 
             }
 
@@ -440,39 +476,34 @@ angular.module('starter.controllers', [])
         $scope.getSearchKey = function() {
 
             $scope.filterKitcher.runnerKey = [];
+            $scope.filterKitcher.runnerServedKey = [];
             $scope.filterKitcher.kitcherKey = [];
             angular.forEach($scope.orderList, function(value, key) {
-                if (value.kitchShow == true) {
-                    angular.forEach(value.orderItemList, function(orderValue, orderKey) {
-                        angular.forEach(orderValue.orderItemListGroupBySubOrder, function(groundValue, groundKey) {
-                            angular.forEach(groundValue.orderItemList, function(setValue, setKey) {
-                                if (setValue.prepareStatus != "COMPLETE") {
-                                    $scope.filterKitcher.kitcherKey.push(setValue.itemDetail);
-
-                                }
-
-
-                            })
-                        })
-                    })
-                }
-                if (value.orderStatus != "SERVED") {
-                    angular.forEach(value.orderItemList, function(orderValue, orderKey) {
-                        angular.forEach(orderValue.orderItemListGroupBySubOrder, function(groundValue, groundKey) {
-                            angular.forEach(groundValue.orderItemList, function(setValue, setKey) {
-
+                angular.forEach(value.kitchenOrderItemsGroupByCourses, function(orderValue, orderKey) {
+                    angular.forEach(orderValue.orderItemListGroupBySubOrder, function(groundValue, groundKey) {
+                        angular.forEach(groundValue.orderItemList, function(setValue, setKey) {
+                            if (setValue.kitchenTicketItemStatus[0].status == "WAITING" || setValue.kitchenTicketItemStatus[0].status == "PROCESSING") {
+                                $scope.filterKitcher.kitcherKey.push(setValue.itemDetail);
+                                $scope.filterKitcher.runnerServedKey.push(setValue.itemDetail);
                                 $scope.filterKitcher.runnerKey.push(setValue.itemDetail);
+                            } else if (setValue.kitchenTicketItemStatus[0].status == "DONE") {
+                                $scope.filterKitcher.runnerKey.push(setValue.itemDetail);
+                                $scope.filterKitcher.runnerServedKey.push(setValue.itemDetail);
+                            } else if (setValue.kitchenTicketItemStatus[0].status == "SERVED") {
+                                $scope.filterKitcher.runnerServedKey.push(setValue.itemDetail);
+                            }
 
 
-                            })
+
                         })
                     })
-                }
+                })
+
             })
 
             $scope.filterKitcher.kitcherKey = $scope.unique5($scope.filterKitcher.kitcherKey);
-
             $scope.filterKitcher.runnerKey = $scope.unique5($scope.filterKitcher.runnerKey);
+            $scope.filterKitcher.runnerServedKey = $scope.unique5($scope.filterKitcher.runnerServedKey);
         }
 
 
@@ -513,13 +544,17 @@ angular.module('starter.controllers', [])
         $scope.prepareStatus = {
             "WAITING": "Waiting",
             "PROCESSING": "In Process",
-            "COMPLETE": "Finished"
+            "DONE": "Finished",
+            "SERVED": "SERVED",
+            "COMPLETE": "SERVED"
 
         };
         $scope.runPrepareStatus = {
-            "WAITING": "Pending",
+            "WAITING": "Waiting",
             "PROCESSING": "In Process",
-            "COMPLETE": ""
+            "DONE": "",
+            "SERVED": "SERVED",
+            "COMPLETE": "SERVED"
         };
         $scope.orderList = [];
 
@@ -544,276 +579,220 @@ angular.module('starter.controllers', [])
             }
             sock.onmessage = function(e) {
 
+
+
                 var d = JSON.parse(e.data);
+                
+                // window.location.reload(true);
 
                 if (!!d.orderInfo) {
-                    angular.forEach(d.orderInfo.orderItemList, function(orderValue, orderKey) {
-                        angular.forEach(orderValue.orderItemListGroupBySubOrder, function(groundValue, groundKey) {
-                            angular.forEach(groundValue.orderItemList, function(setValue, setKey) {
 
-                                setValue.itemDetail = $filter('to_trusted')(setValue.itemDetail);
-                            })
-                        })
-                    })
-                    d.orderInfo.kitchShow = true;
-                    d.orderInfo.runnerShow = true;
-                    d.orderInfo.done = false;
-                    if (d.orderInfo.voidOrder == true) {
 
-                        var voidItemJson = {};
-                        angular.forEach(d.orderInfo.orderItemList, function(orderValue, orderKey) {
+                    if (!d.orderInfo.hasVoid) {
+
+                        angular.forEach(d.orderInfo.kitchenOrderItemsGroupByCourses, function(orderValue, orderKey) {
                             angular.forEach(orderValue.orderItemListGroupBySubOrder, function(groundValue, groundKey) {
-                                angular.forEach(groundValue.orderItemList, function(value, key) {
+                                angular.forEach(groundValue.orderItemList, function(setValue, setKey) {
+                                    setValue.itemDetail = $filter('to_trusted')(setValue.itemDetail);
 
-                                    if (!!value.voidItem) {
-
-                                        voidItemJson["*" + d.orderInfo.id + "-" + value.id + "-"] = value.printQuantity;
-                                    };
-
+                                    $scope.filterKitcher.kitcherKey.push(setValue.itemDetail);
+                                    $scope.filterKitcher.runnerKey.push(setValue.itemDetail);
+                                    $scope.filterKitcher.runnerServedKey.push(setValue.itemDetail);
                                 })
                             })
                         })
+                        d.orderInfo.kitchShow = true;
+                        d.orderInfo.runnerShow = true;
+                        d.orderInfo.done = false;
+                        d.orderInfo.doneId = d.orderInfo.kitchenOrderItemsGroupByCourses[0].orderItemListGroupBySubOrder[0].orderItemList[0].kitchenTicketItemStatus[0].id;
+                        $scope.orderList.push(d.orderInfo);
 
+                        $scope.filterKitcher.kitcherKey = $scope.unique5($scope.filterKitcher.kitcherKey);
+                        $scope.filterKitcher.runnerKey = $scope.unique5($scope.filterKitcher.runnerKey);
+                        $scope.filterKitcher.runnerServedKey = $scope.unique5($scope.filterKitcher.runnerServedKey);
+                    } else {
+                        var voidItemJson = {};
+                        angular.forEach(d.orderInfo.kitchenOrderItemsGroupByCourses, function(orderValue, orderKey) {
+                            angular.forEach(orderValue.orderItemListGroupBySubOrder, function(groundValue, groundKey) {
+                                angular.forEach(groundValue.orderItemList, function(setValue, setKey) {
+
+                                    angular.forEach(setValue.kitchenTicketItemStatus, function(v, k) {
+
+                                        voidItemJson["*" + v.id + "-"] = v.quantity;
+
+                                    })
+                                })
+                            })
+                        })
                         var voidItemStr = Object.keys(voidItemJson).toString();
-                        //angular.forEach($scope.orderList, function(value, key) {
+
                         var goOut = false;
                         for (var i = 0; i < $scope.orderList.length; i++) {
                             var value = $scope.orderList[i];
                             if (goOut == true) {
                                 break;
                             }
-                            angular.forEach(value.orderItemList, function(orderValue, orderKey) {
+                            angular.forEach(value.kitchenOrderItemsGroupByCourses, function(orderValue, orderKey) {
                                 angular.forEach(orderValue.orderItemListGroupBySubOrder, function(groundValue, groundKey) {
                                     angular.forEach(groundValue.orderItemList, function(setValue, setKey) {
-                                        var tempKey = "*" + value.id + "-" + setValue.id + "-";
-                                        if (voidItemStr.indexOf(tempKey) != -1 && !setValue.voidItem) {
-                                            var quantity = parseInt(setValue.printQuantity) - parseInt(voidItemJson[tempKey]);
-                                            if (quantity > 0) {
-                                                setValue.printQuantity = quantity;
+                                        var tempKey = "*" + setValue.kitchenTicketItemStatus[0].id + "-";
+                                        if (voidItemStr.indexOf(tempKey) != -1) {
+                                            if (parseInt(voidItemJson[tempKey]) >= 1) {
+                                                setValue.printQuantity = parseInt(voidItemJson[tempKey]);
+                                                angular.forEach(setValue.subOrderItems, function(v2, k2) {
+                                                    v2.printQuantity = setValue.printQuantity;
+                                                })
                                             } else {
                                                 setValue.voidItem = true;
-
                                             }
+
+
                                             voidItemStr = voidItemStr.replace(tempKey, "");
-                                            goOut = true;
-                                        }
-
-                                    })
-                                })
-                            })
-                        }
-
-                        // })
-
-
-                    } else if (!d.orderInfo.recall) {
-
-                        var addItemJson = {};
-
-                        angular.forEach(d.orderInfo.orderItemList, function(orderValue, orderKey) {
-                            angular.forEach(orderValue.orderItemListGroupBySubOrder, function(groundValue, groundKey) {
-                                angular.forEach(groundValue.orderItemList, function(value, key) {
-                                    if (!value.comboItem) {
-                                        addItemJson["*" + d.orderInfo.id + "-" + value.id + "-"] = key + "-" + value.printQuantity;
-                                    } else {
-                                        addItemJson["*" + d.orderInfo.id + "-" + value.id + "-"] = key;
-                                        angular.forEach(value.subOrderItems, function(cv, ck) {
-                                            addItemJson["*" + d.orderInfo.id + "-" + value.id + "-"] += "-" + cv.printQuantity;
-                                        })
-                                    }
-
-                                })
-                            })
-                        })
-                        var addItemJsonStr = Object.keys(addItemJson).toString();
-                        var addItemJsonLen = [];
-                        var count = 0;
-                        //var addItemJsonMax=1;
-                        // var goOut=false;
-                        // angular.forEach($scope.orderList, function(value, key) {
-                        var goOut = false;
-                        for (var i = 0; i < $scope.orderList.length; i++) {
-                            var value = $scope.orderList[i];
-                            if (goOut == true) {
-                                break;
-                            }
-                            angular.forEach(value.orderItemList, function(orderValue, orderKey) {
-                                angular.forEach(orderValue.orderItemListGroupBySubOrder, function(groundValue, groundKey) {
-                                    angular.forEach(groundValue.orderItemList, function(setValue, setKey) {
-                                        var tempKey = "*" + value.id + "-" + setValue.id + "-";
-
-                                        if (addItemJsonStr.indexOf(tempKey) != -1) {
-
-                                            var tempList = addItemJson[tempKey].split("-");
-                                            var keycount = tempList[0];
-
-
-                                            angular.forEach(addItemJsonLen, function(v, k) {
-                                                if (parseInt(keycount) > parseInt(v)) {
-                                                    count++;
-                                                }
-                                            })
-                                            addItemJsonLen.push(i);
-
-                                            d.orderInfo.orderItemList[0].orderItemListGroupBySubOrder[0].orderItemList.splice(keycount - count, 1);
-                                            if (!setValue.comboItem) {
-                                                setValue.printQuantity = parseInt(setValue.printQuantity) + (parseInt(tempList[1]));
-                                            } else {
-                                                angular.forEach(setValue.subOrderItems, function(cv, ck) {
-                                                    cv.printQuantity = parseInt(cv.printQuantity) + parseInt(tempList[ck + 1]);
-                                                })
-                                            }
-
-                                            goOut = true;
-
-
-                                        }
-
-                                    })
-                                })
-                            })
-
-                        }
-                        if (d.orderInfo.orderItemList[0].orderItemListGroupBySubOrder[0].orderItemList.length > 0) {
-                            d.orderInfo.subItemId=d.orderInfo.orderItemList[0].orderItemListGroupBySubOrder[0].orderItemList[0].id;
-                          //  console.log(d.orderInfo);
-                            $scope.orderList.push(d.orderInfo);
-                        }
-                    } else {
-                        var orderInfo = d.orderInfo;
-
-
-                        var goOut = false;
-                        for (var i = 0; i < $scope.orderList.length; i++) {
-                            var value = $scope.orderList[i];
-                            if (goOut == true) {
-                                break;
-                            }
-
-                            if (orderInfo.id == value.id) {
-                                angular.forEach(value.orderItemList, function(orderValue, orderKey) {
-                                    angular.forEach(orderValue.orderItemListGroupBySubOrder, function(groundValue, groundKey) {
-                                        angular.forEach(groundValue.orderItemList, function(setValue, setKey) {
-
-                                            if (setValue.id == orderInfo.orderItemList[0].orderItemListGroupBySubOrder[0].orderItemList[0].id) {
-                                                value.kitchShow = false;
-                                                value.kitchRecallShow = false;
-                                                value.done = false;
+                                            if (voidItemStr == "") {
                                                 goOut = true;
-                                                if (groundValue.orderItemList.length == 1) {
-                                                    $scope.orderList.splice(key, 1);
-                                                } else {
-                                                    groundValue.orderItemList.splice(setKey, 1);
-                                                    angular.forEach(orderValue.orderItemListGroupBySubOrder, function(v1, k1) {
-                                                        angular.forEach(v1.orderItemList, function(v2, k2) {
-                                                            value.subItemId = v2.id;
-                                                            if (!value.orderStatus) {
-                                                                if (v2.prepareStatus == "COMPLETE") {
-                                                                    value.kitchRecallShow = true;
-                                                                } else {
-                                                                    value.show = true;
-                                                                    value.kitchShow = true;
-                                                                }
-                                                            }
-                                                        })
-                                                    })
-
-
-                                                    if (!value.kitchShow && !value.orderStatus) {
-                                                        value.done = true;
-                                                    }
-                                                }
-
-
                                             }
+                                        }
 
-                                        })
+
                                     })
                                 })
-                            }
+                            })
                         }
-                        orderInfo.kitchShow = true;
-                        orderInfo.kitchRecallShow = false;
-                        orderInfo.done = false;
-
-                        $scope.orderList.unshift(orderInfo);
-
-
                     }
-                    $scope.audio.play();
-                    //el.play();
 
-                }
 
-                if (!!d.orderUpdateInfo) {
+
+
+                } else if (!!d.orderUpdateInfo) {
                     orderInfo = d.orderUpdateInfo;
 
 
+                    var goOut = false;
+                    for (var i = 0; i <= $scope.orderList.length; i++) {
+                        if (goOut) {
+                            break;
+                        }
+                        value = $scope.orderList[i];
+                        if (orderInfo.orderId == value.orderId) {
+                            angular.forEach(value.kitchenOrderItemsGroupByCourses, function(orderValue, orderKey) {
 
-                    angular.forEach($scope.orderList, function(value, key) {
-                        if (orderInfo.orderId == value.id) {
-
-                            value.showRecall = false;
-                            angular.forEach(value.orderItemList, function(orderValue, orderKey) {
                                 angular.forEach(orderValue.orderItemListGroupBySubOrder, function(groundValue, groundKey) {
-
                                     angular.forEach(groundValue.orderItemList, function(setValue, setKey) {
 
-                                        if (setValue.id == orderInfo.orderItemId) {
-                                            value.kitchShow = false;
-                                            value.kitchRecallShow = false;
-                                            value.done = false;
+                                        if (orderInfo.prepareToServeId == setValue.kitchenTicketItemStatus[0].id) {
+                                            setValue.kitchenTicketItemStatus[0].prepareTime = orderInfo.prepareTime;
+                                            setValue.kitchenTicketItemStatus[0].currentTime = orderInfo.currentTime;
+                                            setValue.kitchenTicketItemStatus[0].serveTime = orderInfo.serveTime;
+                                            setValue.kitchenTicketItemStatus[0].completeTime = orderInfo.completeTime;
+                                            
 
-                                            value.currentTime = !!orderInfo.currentTime ? orderInfo.currentTime : null;
-                                            value.orderStatus = !!orderInfo.orderStatus ? orderInfo.orderStatus : null;
-                                            value.servedTime = !!orderInfo.servedTime ? orderInfo.servedTime : null;
-                                            setValue.prepareStatus = !!orderInfo.orderItemPrepStatus ? orderInfo.orderItemPrepStatus : null;
-                                            setValue.prepareStartTime = !!orderInfo.prepStartTime ? orderInfo.prepStartTime : null;
-                                            setValue.prepareEndTime = orderInfo.prepEndTime ? orderInfo.prepEndTime : null;
-                                            setValue.orderStatus = !!orderInfo.orderItemPrepStatus ? orderInfo.orderItemPrepStatus : null;
+                                            setValue.kitchenTicketItemStatus[0].status = orderInfo.status;
 
+                                            goOut = true;
+                                 if (!!orderInfo.recall && orderInfo.recall) {
+                                                var tempValue = angular.copy(value);
+                                                tempValue.kitchShow = true;
+                                                tempValue.kitchRecallShow = false;
+                                                
+                                                tempValue.done = false;
+                                                tempValue.recall = true;
+                                                 value.kitchRecallShow = false;
+                                                if (groundValue.orderItemList.length >= 2) {
 
-                                            angular.forEach(orderValue.orderItemListGroupBySubOrder, function(v1, k1) {
-                                                angular.forEach(v1.orderItemList, function(v2, k2) {
+                                                     if (orderInfo.prepareToServeId == setValue.kitchenTicketItemStatus[0].id) {
+                                                        tempValue.kitchenOrderItemsGroupByCourses[0].orderItemListGroupBySubOrder[0].orderItemList.length = 0;
+                                                        tempValue.kitchenOrderItemsGroupByCourses[0].orderItemListGroupBySubOrder[0].orderItemList[0] = setValue;
 
-                                                    if (!value.orderStatus) {
-                                                        if (v2.prepareStatus != "COMPLETE") {
-                                                            value.show = true;
-                                                            value.kitchShow = true;
-                                                        } else if (v2.prepareStatus == "COMPLETE") {
-                                                            value.kitchRecallShow = true;
+                                                        groundValue.orderItemList.splice(setKey, 1);
+                                                  }
+                                                   $scope.orderList.unshift(tempValue);
+                                                   for(var j=0;j<groundValue.orderItemList.length;j++){
+                                                        var status=groundValue.orderItemList[j].kitchenTicketItemStatus[0].status;
+                                                        if(status=="DONE" || status=="COMPLETE"  ||status=="SERVED" ){
+                                                             value.kitchRecallShow = true;
+                                                            break;
                                                         }
+                                                       // if(s=="DONE" || s=="COMPLETE" || s="SERVED"){
+                                                           
+                                                       // }
+                                                   }
+                                                 
+                                                } else {
+                                                    value.kitchShow = true;
+                                                   
+                                                    value.done = false;
+                                                    value.recall = true;
+                                                    $scope.orderList.splice(i, 1);
+                                                    $scope.orderList.unshift(value);
+                                                }
+
+
+                                            } else {
+                                                value.kitchShow = false;
+                                                value.kitchRecallShow = false;
+                                                value.done = false;
+
+                                                value.status = null;
+                                                if (orderInfo.status == "SERVED") {
+                                                    value.status = orderInfo.status;
+                                                    value.completeTime = orderInfo.completeTime;
+                                                } else if (orderInfo.status == "COMPLETE") {
+                                                    value.status = orderInfo.status;
+
+                                                } else {
+                                                    angular.forEach(groundValue.orderItemList, function(v, k) {
+                                                        value.doneId = v.kitchenTicketItemStatus[0].id;
+
+                                                        if (v.kitchenTicketItemStatus[0].status == "DONE" ||
+                                                            v.kitchenTicketItemStatus[0].status == "SERVED" ||
+                                                            v.kitchenTicketItemStatus[0].status == "COMPLETE") {
+                                                            value.doneId = v.kitchenTicketItemStatus[0].id;
+
+                                                            value.kitchRecallShow = true;
+                                                        } else {
+                                                            value.kitchShow = true;
+
+
+                                                        }
+
+                                                    })
+                                                    if (!value.kitchShow && !value.orderStatus) {
+                                                        value.done = true;
+
                                                     }
-                                                })
-                                            })
 
+                                                }
 
-                                            if (!value.kitchShow && !value.orderStatus) {
-                                                value.done = true;
                                             }
-
 
                                         }
 
-
                                     })
                                 })
+
                             })
-
-
-
-
                         }
 
+                    }
 
 
-                    });
-                }
-                if (d.instanceName != "SERVER") {
                     $scope.getSearchKey();
+                } else if (!!d.specialCommand) {
+                    if (d.specialCommand.refresh == true) {
+                        window.location.reload(true);
+                    } else {
 
+                        angular.forEach($scope.orderList, function(value, key) {
 
+                            if (value.orderId == d.specialCommand.orderId) {
+                                value.orderNum = d.specialCommand.orderNum;
+                                value.orderType = d.specialCommand.orderType;
+                                 value.server = d.specialCommand.server;
+                                 value.tableName = d.specialCommand.tableName;
 
+                            }
+                        })
+                    }
 
                 }
 
@@ -831,29 +810,32 @@ angular.module('starter.controllers', [])
 
         }).then(function success(response) {
             $scope.orderList = response.data.orderDetailInfoList;
+     
+
 
             if (!!$scope.orderList) {
                 angular.forEach($scope.orderList, function(value, key) {
-                    value.show = false;
-                    value.showRecall = false;
 
+                    value.showRecall = false;
                     value.kitchShow = false;
                     value.kitchRecallShow = false;
                     value.done = false;
 
-                    angular.forEach(value.orderItemList, function(orderValue, orderKey) {
+                    angular.forEach(value.kitchenOrderItemsGroupByCourses, function(orderValue, orderKey) {
                         angular.forEach(orderValue.orderItemListGroupBySubOrder, function(groundValue, groundKey) {
-
                             angular.forEach(groundValue.orderItemList, function(setValue, setKey) {
                                 setValue.itemDetail = $filter('to_trusted')(setValue.itemDetail);
-                                value.subItemId = setValue.id;
-                                if (!value.orderStatus) {
-                                    console.log("598");
-                                    if (setValue.prepareStatus == "COMPLETE") {
-                                        value.kitchRecallShow = true;
 
+
+                                value.doneId = setValue.kitchenTicketItemStatus[0].id;
+
+                                if (!value.status) {
+
+                                    if (setValue.kitchenTicketItemStatus[0].status == "DONE") {
+                                        value.kitchRecallShow = true;
+                                        value.doneId = setValue.kitchenTicketItemStatus[0].id;
                                     } else {
-                                        value.show = true;
+
                                         value.kitchShow = true;
                                     }
                                 }
@@ -895,17 +877,18 @@ angular.module('starter.controllers', [])
 
 
     })
-    .controller('RunnerSearchCtrl', function($scope, $location, $rootScope, $timeout, $ionicModal, localStorageService, $http, $timeout,localStorageService) {
-	    $scope.config.runnerIndex=localStorageService.get("runnerUrl");
+    .controller('RunnerSearchCtrl', function($scope, $location, $rootScope, $timeout, $ionicModal, localStorageService, $http, $timeout, localStorageService) {
+        $scope.config.runnerIndex = localStorageService.get("runnerUrl");
         $scope.find = function(value) {
             $scope.filterKitcher.listShow = false;
             $scope.filterKitcher.filterWord = value;
             $scope.search(value, 'runner', "")
         }
+      
 
     })
     .controller('KitchenSearchCtrl', function($scope, $rootScope, $timeout, $ionicModal, localStorageService, $http, $timeout) {
-        $scope.config.kitchenerUrl=localStorageService.get("kitchenerUrl");
+        $scope.config.kitchenerUrl = localStorageService.get("kitchenerUrl");
         $scope.find = function(value) {
 
             $scope.filterKitcher.listShow = false;
@@ -924,7 +907,7 @@ angular.module('starter.controllers', [])
 
     })
     .controller('KitchenCtrl', function($scope, $rootScope, $location, $timeout, $ionicModal, localStorageService, $http, $timeout) {
-         
+
 
         $scope.goToRecall = function() {
             $location.path("tab/kitchenRecall");
@@ -939,7 +922,9 @@ angular.module('starter.controllers', [])
 
 
         $scope.kitchUpdo = function() {
+
             var kitchenUpdoList = localStorageService.get("kitchenUpdo");
+
             if (!!kitchenUpdoList) {
 
                 var tempKitchenUpdoList = [];
@@ -947,16 +932,16 @@ angular.module('starter.controllers', [])
 
                 angular.forEach($scope.orderList, function(value, key) {
 
-                    angular.forEach(value.orderItemList, function(orderValue, orderKey) {
+                    angular.forEach(value.kitchenOrderItemsGroupByCourses, function(orderValue, orderKey) {
                         angular.forEach(orderValue.orderItemListGroupBySubOrder, function(groundValue, groundKey) {
                             angular.forEach(groundValue.orderItemList, function(setValue, setKey) {
-                                if (value.orderStatus != "SERVED") {
+                                if (value.status != "SERVED" || value.status != "COMPLETE") {
 
                                     angular.forEach(kitchenUpdoList, function(localValue, localKey) {
 
-                                        if (setValue.id == localValue.orderItemId[0]) {
+                                        if (setValue.kitchenTicketItemStatus[0].id == localValue.prepareToServeIds[0]) {
                                             tempKitchenUpdoList.push(localValue);
-
+                                            kitchenUpdoList.splice(localKey, 1);
 
                                         }
 
@@ -1021,26 +1006,24 @@ angular.module('starter.controllers', [])
 
 
     })
-    .controller('RunnerdoCtrl', function($scope, $http, localStorageService, $rootScope,$location) {
-          localStorageService.set("runnerUrl",$location.url());
-          $scope.config.runnerIndex=$location.url();
-		$scope.runnerUpdo = function() {
-
+    .controller('RunnerdoCtrl', function($scope, $http, localStorageService, $rootScope, $location) {
+        localStorageService.set("runnerUrl", $location.url());
+        $scope.config.runnerIndex = $location.url();
+        $scope.runnerUpdo = function() {
             var runnerUpdoList = localStorageService.get("runnerUpdo");
-
             if (!!runnerUpdoList) {
                 runnerUpdoList = JSON.parse(runnerUpdoList);
                 var tempRunnerUpdoList = [];
 
                 angular.forEach($scope.orderList, function(value, key) {
 
-                    angular.forEach(value.orderItemList, function(orderValue, orderKey) {
+                    angular.forEach(value.kitchenOrderItemsGroupByCourses, function(orderValue, orderKey) {
                         angular.forEach(orderValue.orderItemListGroupBySubOrder, function(groundValue, groundKey) {
                             angular.forEach(groundValue.orderItemList, function(setValue, setKey) {
 
 
                                 angular.forEach(runnerUpdoList, function(localValue, localKey) {
-                                    if (setValue.id == localValue.orderItemId[0]) {
+                                    if (setValue.kitchenTicketItemStatus[0].id == localValue.prepareToServeIds[0]) {
                                         tempRunnerUpdoList.push(localValue);
                                     }
 
@@ -1051,7 +1034,7 @@ angular.module('starter.controllers', [])
                         })
                     })
                 })
-
+            
 
                 runnerUpdoList = tempRunnerUpdoList;
                 var length = runnerUpdoList.length;
@@ -1060,8 +1043,12 @@ angular.module('starter.controllers', [])
                     runnerUpdoList.sort(function(a, b) {
                         return parseInt(a.time) - parseInt(b.time);
                     });
+                    if (runnerUpdoList[length - 1] == "COMPLETE") {
+                        runnerUpdoList[length - 1].status = "SERVED";
+                    } else {
+                        runnerUpdoList[length - 1].status = "DONE";
+                    }
 
-                    runnerUpdoList[length - 1].status = "COMPLETE";
 
                     $http({
                             method: 'POST',
@@ -1099,9 +1086,10 @@ angular.module('starter.controllers', [])
 
         $scope.done = function(e) {
 
-            var subItemId = e.target.dataset.subitemid;
+            var doneId = e.target.dataset.doneid;
+
             var processJson = {};
-            processJson.orderItemId = [];
+            processJson.prepareToServeIds = [];
 
 
             var goOut = false;
@@ -1114,16 +1102,17 @@ angular.module('starter.controllers', [])
                     break;
                 }
 
-                angular.forEach(value.orderItemList, function(orderValue, orderKey) {
+                angular.forEach(value.kitchenOrderItemsGroupByCourses, function(orderValue, orderKey) {
                     angular.forEach(orderValue.orderItemListGroupBySubOrder, function(groundValue, groundKey) {
                         angular.forEach(groundValue.orderItemList, function(setValue, setKey) {
-                            if (subItemId == setValue.id) {
-                                processJson.status = (value.orderStatus == "SERVED") ? "DONE" : "SERVED";
+                            if (doneId == setValue.kitchenTicketItemStatus[0].id) {
+                                processJson.status = (value.status == "SERVED") ? "COMPLETE" : "SERVED";
 
-                                processJson.orderId = value.id;
+                                processJson.orderId = value.orderId;
                                 angular.forEach(groundValue.orderItemList, function(sv, sk) {
-                                    processJson.orderItemId.push(sv.id);
+                                    processJson.prepareToServeIds.push(sv.kitchenTicketItemStatus[0].id);
                                 })
+                                goOut = true;
                             }
 
 
@@ -1136,7 +1125,6 @@ angular.module('starter.controllers', [])
 
             };
 
-            // console.log(processJson);
 
             $http({
                 method: 'POST',
@@ -1181,25 +1169,25 @@ angular.module('starter.controllers', [])
 
     })
     .controller('KitchenRecallCtrl', function($scope, $http, $rootScope) {
-	   //$scope.config.kitchenerUrl=localStorageService.get("kitchenerUrl");
+        //$scope.config.kitchenerUrl=localStorageService.get("kitchenerUrl");
         $scope.kitchenRecall = function(orderId, orderItemId) {
-
+         
             var processJson = {};
             processJson.orderId = orderId;
-            processJson.orderItemId = [];
-            processJson.orderItemId.push(orderItemId);
-            var cblist = document.querySelectorAll(".cb" + orderItemId);
-            angular.forEach(cblist, function(v, k) {
-                processJson.orderItemId.push(v.value);
-            })
+            processJson.prepareToServeIds = [];
+            processJson.prepareToServeIds.push(orderItemId);
+            /*  var cblist = document.querySelectorAll(".cb" + orderItemId);
+              angular.forEach(cblist, function(v, k) {
+                  processJson.prepareToServeIds.push(v.value);
+              })*/
 
 
-
-            processJson.status = "INITIAL";
+            processJson.status = "WAITING";
 
             $http({
                     method: 'POST',
                     url: $rootScope.recallOrderUrl,
+                    //url:$rootScope.updateOrderUrl,
                     headers: {
                         'Content-Type': 'application/json; charset=utf-8'
                     },
@@ -1213,36 +1201,39 @@ angular.module('starter.controllers', [])
 
                     }
                 }, function error(response) {
+
                     console.log(response);
                 });
 
+
         };
     })
-    .controller('RunnerReviewCtrl', function($scope, $http, $rootScope,localStorageService) {
-		 $scope.config.runnerIndex=localStorageService.get("runnerUrl");
+    .controller('RunnerReviewCtrl', function($scope, $http, $rootScope, localStorageService) {
+        $scope.runnerReview = function(item) {
+            return (item.kitchenTicketItemStatus[0].status == "SERVED" || item.kitchenTicketItemStatus[0].status == "COMPLETE");
+        }
+        $scope.config.runnerIndex = localStorageService.get("runnerUrl");
 
     })
     .controller('RunnerCtrl', function($scope, $http, localStorageService, $rootScope, $location) {
-          localStorageService.set("runnerUrl",$location.url());
-          $scope.config.runnerIndex=$location.url();
+        localStorageService.set("runnerUrl", $location.url());
+        $scope.config.runnerIndex = $location.url();
 
         $scope.runnerUpdo = function() {
-
             var runnerUpdoList = localStorageService.get("runnerUpdo");
-
             if (!!runnerUpdoList) {
                 runnerUpdoList = JSON.parse(runnerUpdoList);
                 var tempRunnerUpdoList = [];
 
                 angular.forEach($scope.orderList, function(value, key) {
 
-                    angular.forEach(value.orderItemList, function(orderValue, orderKey) {
+                    angular.forEach(value.kitchenOrderItemsGroupByCourses, function(orderValue, orderKey) {
                         angular.forEach(orderValue.orderItemListGroupBySubOrder, function(groundValue, groundKey) {
                             angular.forEach(groundValue.orderItemList, function(setValue, setKey) {
 
 
                                 angular.forEach(runnerUpdoList, function(localValue, localKey) {
-                                    if (setValue.id == localValue.orderItemId[0]) {
+                                    if (setValue.kitchenTicketItemStatus[0].id == localValue.prepareToServeIds[0]) {
                                         tempRunnerUpdoList.push(localValue);
                                     }
 
@@ -1253,7 +1244,7 @@ angular.module('starter.controllers', [])
                         })
                     })
                 })
-
+               
 
                 runnerUpdoList = tempRunnerUpdoList;
                 var length = runnerUpdoList.length;
@@ -1262,8 +1253,12 @@ angular.module('starter.controllers', [])
                     runnerUpdoList.sort(function(a, b) {
                         return parseInt(a.time) - parseInt(b.time);
                     });
+                    /*if(runnerUpdoList[length - 1]=="COMPLETE"){
+                        runnerUpdoList[length - 1].status = "SERVED";    
+                    }else {*/
+                    runnerUpdoList[length - 1].status = "DONE";
+                    //}
 
-                    runnerUpdoList[length - 1].status = "COMPLETE";
 
                     $http({
                             method: 'POST',
@@ -1299,6 +1294,7 @@ angular.module('starter.controllers', [])
         }
 
         $scope.kitchUpdo = function() {
+
             var kitchenUpdoList = localStorageService.get("kitchenUpdo");
             if (!!kitchenUpdoList) {
 
@@ -1307,14 +1303,14 @@ angular.module('starter.controllers', [])
 
                 angular.forEach($scope.orderList, function(value, key) {
 
-                    angular.forEach(value.orderItemList, function(orderValue, orderKey) {
+                    angular.forEach(value.kitchenOrderItemsGroupByCourses, function(orderValue, orderKey) {
                         angular.forEach(orderValue.orderItemListGroupBySubOrder, function(groundValue, groundKey) {
                             angular.forEach(groundValue.orderItemList, function(setValue, setKey) {
-                                if (value.orderStatus != "SERVED") {
+                                if (value.status != "SERVED" || value.status != "COMPLETE") {
 
                                     angular.forEach(kitchenUpdoList, function(localValue, localKey) {
 
-                                        if (setValue.id == localValue.orderItemId[0]) {
+                                        if (setValue.kitchenTicketItemStatus[0].id == localValue.orderItemId[0]) {
                                             tempKitchenUpdoList.push(localValue);
 
 
@@ -1380,9 +1376,10 @@ angular.module('starter.controllers', [])
 
 
         $scope.done = function(e) {
-            var subItemId = e.target.dataset.subitemid;
+            var doneId = e.target.dataset.doneid;
+
             var processJson = {};
-            processJson.orderItemId = [];
+            processJson.prepareToServeIds = [];
             processJson.status = "SERVED";
 
             var goOut = false;
@@ -1392,16 +1389,15 @@ angular.module('starter.controllers', [])
                     break;
                 }
 
-                angular.forEach(value.orderItemList, function(orderValue, orderKey) {
+                angular.forEach(value.kitchenOrderItemsGroupByCourses, function(orderValue, orderKey) {
                     angular.forEach(orderValue.orderItemListGroupBySubOrder, function(groundValue, groundKey) {
                         angular.forEach(groundValue.orderItemList, function(setValue, setKey) {
-                            if (subItemId == setValue.id) {
-                                processJson.orderId = value.id;
+                            if (doneId == setValue.kitchenTicketItemStatus[0].id) {
+                                processJson.orderId = value.orderId;
                                 angular.forEach(groundValue.orderItemList, function(sv, sk) {
-                                    processJson.orderItemId.push(sv.id);
+                                    processJson.prepareToServeIds.push(sv.kitchenTicketItemStatus[0].id);
                                 })
-                                goOut=true;
-                                console.log(groundValue.orderItemList);
+                                goOut = true;
                             }
 
 
@@ -1414,7 +1410,7 @@ angular.module('starter.controllers', [])
 
             };
 
-         console.log(processJson);
+            // console.log(processJson);
 
             $http({
                 method: 'POST',
@@ -1474,7 +1470,7 @@ function toggleFullScreen() {
             document.documentElement.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
         }
     } else {
-       // alert("xdddddxx");
+        // alert("xdddddxx");
         if (document.exitFullscreen) {
             document.exitFullscreen();
         } else if (document.msExitFullscreen) {
@@ -1491,7 +1487,7 @@ function toggleFullScreen() {
 function closeChrome() {
 
     window.close();
-    
+
 }
 
 function getKeyValue(url) {
